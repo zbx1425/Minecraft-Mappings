@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.client.ClientRegistry;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.NetworkHooks;
@@ -107,8 +108,10 @@ public class ForgeUtilities {
 	public static class Events {
 
 		@SubscribeEvent
-		public static void onRenderTickEvent(net.minecraftforge.client.event.RenderLevelLastEvent event) {
-			renderTickAction.run();
+		public static void onRenderTickEvent(RenderLevelStageEvent event) {
+			if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) {
+				renderTickAction.run();
+			}
 		}
 
 		@SubscribeEvent
