@@ -2,6 +2,7 @@ package @package@;
 
 import dev.architectury.platform.forge.EventBuses;
 import dev.architectury.registry.client.keymappings.KeyMappingRegistry;
+import mtr.mappings.DeferredRegisterHolder;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.core.Registry;
@@ -15,6 +16,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -23,7 +25,7 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
-import net.minecraftforge.event.CreativeModeTabEvent;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.NetworkHooks;
@@ -121,7 +123,7 @@ public class ForgeUtilities {
 
 		@SubscribeEvent
 		public static void onRenderGameOverlayEvent(RenderGuiOverlayEvent.Post event) {
-			renderGameOverlayAction.accept(event.getPoseStack());
+			renderGameOverlayAction.accept(event.getGuiGraphics());
 		}
 	}
 
@@ -141,21 +143,22 @@ public class ForgeUtilities {
 	public static class RegisterCreativeTabs {
 
 		@SubscribeEvent
-		public static void onRegisterCreativeModeTabsEvent(CreativeModeTabEvent.Register event) {
-			CREATIVE_TAB_ORDER.forEach(resourceLocation -> {
-				final CreativeModeTabWrapper creativeModeTabWrapper = CREATIVE_TABS.get(resourceLocation);
-				creativeModeTabWrapper.creativeModeTab = event.registerCreativeModeTab(resourceLocation, builder -> builder.icon(creativeModeTabWrapper.iconSupplier).title(Component.translatable(creativeModeTabWrapper.translationKey)).build());
-			});
-		}
-
-		@SubscribeEvent
-		public static void onRegisterCreativeModeTabsEvent(CreativeModeTabEvent.BuildContents event) {
+		public static void onRegisterCreativeModeTabsEvent(BuildCreativeModeTabContentsEvent event) {
 			CREATIVE_TABS.forEach((resourceLocation, creativeModeTabWrapper) -> {
 				if (creativeModeTabWrapper.creativeModeTab.getDisplayName().equals(event.getTab().getDisplayName())) {
 					creativeModeTabWrapper.items.forEach(item -> event.getEntries().put(new ItemStack(item), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS));
 				}
 			});
 		}
+	}
+
+	public static void registerCreativeModeTabsToDeferredRegistry(DeferredRegisterHolder<CreativeModeTab> registry) {
+		CREATIVE_TAB_ORDER.forEach(resourceLocation -> {
+			final CreativeModeTabWrapper creativeModeTabWrapper = CREATIVE_TABS.get(resourceLocation);
+			CreativeModeTab tab = CreativeModeTab.builder().icon(creativeModeTabWrapper.iconSupplier).title(Component.translatable(creativeModeTabWrapper.translationKey)).build();
+			creativeModeTabWrapper.creativeModeTab = tab;
+			registry.register(resourceLocation.getPath(), () -> tab);
+		});
 	}
 
 	private static class EntityRendererPair<T extends Entity> {
