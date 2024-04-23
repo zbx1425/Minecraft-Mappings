@@ -10,6 +10,8 @@ import net.fabricmc.fabric.api.object.builder.v1.client.model.FabricModelPredica
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -41,10 +43,17 @@ public interface FabricRegistryUtilities {
 	}
 
 	static void registerCreativeModeTab(CreativeModeTab creativeModeTab, Item item) {
-		ItemGroupEvents.modifyEntriesEvent(creativeModeTab).register(entries -> entries.accept(item));
+		ItemGroupEvents
+				.modifyEntriesEvent(BuiltInRegistries.CREATIVE_MODE_TAB.getResourceKey(creativeModeTab).orElseThrow())
+				.register(entries -> entries.accept(item));
 	}
 
 	static CreativeModeTab createCreativeModeTab(ResourceLocation id, Supplier<ItemStack> supplier) {
-		return FabricItemGroup.builder(id).icon(supplier).build();
+		CreativeModeTab tab = FabricItemGroup.builder()
+				.icon(supplier)
+				.title(Text.translatable(String.format("itemGroup.%s.%s", id.getNamespace(), id.getPath())))
+				.build();
+		Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, id, tab);
+		return tab;
 	}
 }
